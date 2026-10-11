@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/banco_xyz;AUTO_SERVER=TRUE;MODE=PostgreSQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver

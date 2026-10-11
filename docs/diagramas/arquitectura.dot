@@ -1,0 +1,67 @@
+digraph G {
+  graph [rankdir=TB, fontname="Helvetica", fontsize=12, pad=0.3, nodesep=0.5, ranksep=0.6, splines=true, bgcolor="white", label="Banco XYZ - arquitectura desplegada en AWS EC2 (docker compose)", labelloc=t, fontsize=16];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, color="#555555", penwidth=1.2];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  subgraph cluster_clientes { label="Clientes (simulados con Postman)"; style="rounded,dashed"; color="#999999"; fontsize=11;
+    web [label="App Web\n(Authorization Code)", fillcolor="#FFFFFF"];
+    movil [label="App Movil\n(Authorization Code)", fillcolor="#FFFFFF"];
+    cajero [label="Cajero automatico\n(Client Credentials)", fillcolor="#FFFFFF"];
+    backoffice [label="Ejecutivo / Backoffice\n(Client Credentials)", fillcolor="#FFFFFF"];
+  }
+
+  subgraph cluster_ec2 { label="Instancia EC2 t3.large - Ubuntu 24.04 - Docker"; style="rounded"; color="#E0A000"; penwidth=2; fontsize=12;
+    subgraph cluster_bff { label="Backend for Frontend (HTTPS)"; style="rounded,filled"; fillcolor="#EAF2FB"; color="#4A86C5";
+      bffweb [label="bff-web :8091", fillcolor="#C9DDF2"];
+      bffmovil [label="bff-movil :8092", fillcolor="#C9DDF2"];
+      bffcajero [label="bff-cajero :8093", fillcolor="#C9DDF2"];
+    }
+    subgraph cluster_cloud { label="Spring Cloud"; style="rounded,filled"; fillcolor="#F2F2F2"; color="#888888";
+      auth [label="auth-server :9000\nOAuth 2.0 / JWT", fillcolor="#FFE9B3"];
+      config [label="config-server :8888", fillcolor="#E6E6E6"];
+      eureka [label="eureka-server :8761", fillcolor="#E6E6E6"];
+    }
+    kafka [label="Apache Kafka\n3 brokers - RF 3\n8 topicos + DLT", shape=cylinder, fillcolor="#FFD9B3", color="#D9822B"];
+    subgraph cluster_ms { label="Microservicios de negocio"; style="rounded,filled"; fillcolor="#EEF7EE"; color="#5AA65A";
+      cuentas [label="ms-cuentas x2\n:8090 / :8097", fillcolor="#CDE8CD"];
+      pagos [label="ms-pagos x2\n:8098 / :8099", fillcolor="#CDE8CD"];
+      clientes [label="ms-clientes\n:8100", fillcolor="#CDE8CD"];
+    }
+    subgraph cluster_apoyo { label="Microservicios de apoyo"; style="rounded,filled"; fillcolor="#EAF6F6"; color="#3A9A9A";
+      valid [label="ms-validaciones x2\n:8094 / :8095", fillcolor="#CBEBEB"];
+      notif [label="ms-notificaciones\n:8096", fillcolor="#CBEBEB"];
+    }
+    pg [label="PostgreSQL 16\nbancoxyz_cuentas | _pagos\n_clientes | _batch", shape=cylinder, fillcolor="#E4D9F2", color="#7D5BA6"];
+    batch [label="batch-service\nSpring Batch (3 Jobs)", fillcolor="#F6E0E0", color="#B55A5A"];
+  }
+  csv [label="Archivos legacy\nfin_legacy_data/semana_3", shape=note, fillcolor="#FFF8DC"];
+
+  web -> bffweb [label="HTTPS + JWT"];
+  movil -> bffmovil [label="HTTPS + JWT"];
+  cajero -> bffcajero [label="HTTPS + JWT"];
+  backoffice -> cuentas [label="cuentas.admin", style=dashed, constraint=false];
+  backoffice -> clientes [label="clientes.admin", style=dashed, constraint=false];
+  web -> auth [style=dotted, color="#C99A00", label="login / token"];
+
+  bffweb -> kafka [color="#D9822B", label="solicitudes"];
+  bffmovil -> kafka [color="#D9822B"];
+  bffcajero -> kafka [color="#D9822B"];
+  bffweb -> cuentas [color="#4A86C5", label="consultas (LB)"];
+  bffweb -> pagos [color="#4A86C5"];
+  bffweb -> clientes [color="#4A86C5"];
+  bffmovil -> cuentas [color="#4A86C5"];
+  bffcajero -> cuentas [color="#4A86C5"];
+
+  kafka -> pagos [dir=both, color="#D9822B"];
+  kafka -> cuentas [dir=both, color="#D9822B"];
+  kafka -> valid [dir=both, color="#D9822B"];
+  kafka -> notif [color="#D9822B"];
+  kafka -> clientes [color="#D9822B", label="alertas"];
+  pagos -> cuentas [color="#4A86C5", label="CB msCuentas"];
+  clientes -> cuentas [color="#4A86C5"];
+
+  cuentas -> pg; pagos -> pg; clientes -> pg; batch -> pg;
+  csv -> batch [label="lee y valida"];
+  csv -> cuentas [style=dashed, label="carga inicial"];
+  config -> eureka [style=invis];
+}

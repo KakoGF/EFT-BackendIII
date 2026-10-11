@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.25, ranksep=1.1, label="Banco XYZ - casos de uso principales", labelloc=t, fontsize=16, pad=0.3];
+  node [fontname="Helvetica", fontsize=11];
+  edge [color="#666666", arrowhead=none];
+  node [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#555555"];
+  cw [label="Cliente\n(App Web)"]; cm [label="Cliente\n(App Movil)"]; ca [label="Cajero\nautomatico"]; ej [label="Ejecutivo\n(Backoffice)"]; op [label="Operaciones\n(Soporte)"]; prog [label="Planificador\n(proceso nocturno)"];
+  subgraph cluster_s { label="Sistema Banco XYZ"; style="rounded"; color="#4A86C5"; fontsize=13;
+    node [shape=ellipse, style=filled, fillcolor="#EAF2FB", color="#4A86C5"];
+    u1 [label="Consultar cuentas\ny movimientos"]; u2 [label="Transferir entre cuentas"]; u3 [label="Pagar un servicio"];
+    u4 [label="Consultar estado\nde una solicitud"]; u5 [label="Retirar / depositar\nefectivo"]; u6 [label="Consultar saldo"];
+    u7 [label="Registrar y actualizar\ncliente"]; u8 [label="Abrir, bloquear,\ndesbloquear y cerrar cuenta"];
+    u9 [label="Monitorear circuit breakers,\nvalidaciones y notificaciones"]; u10 [label="Ejecutar procesos batch\n(transacciones, intereses,\nestados anuales)"];
+    node [fillcolor="#FFF2E0", color="#D9822B"];
+    i1 [label="Validar reglas\ny antifraude"]; i2 [label="Notificar al cliente"]; i3 [label="Bloqueo preventivo\npor alerta"];
+  }
+  cw -> {u1 u2 u3 u4}; cm -> {u1 u2 u3 u4}; ca -> {u5 u6 u4}; ej -> {u7 u8}; op -> u9; prog -> u10;
+  edge [style=dashed, arrowhead=vee, fontsize=9, label="<<include>>", color="#D9822B", fontcolor="#D9822B"];
+  u2 -> i1; u3 -> i1; u5 -> i1; i1 -> i3 [label="<<extend>>"]; u2 -> i2 [label=""]; u5 -> i2 [label=""];
+}

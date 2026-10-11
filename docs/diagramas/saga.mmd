@@ -1,0 +1,31 @@
+%%{init: {"themeVariables": {"fontSize": "22px"}, "sequence": {"mirrorActors": false, "actorMargin": 30, "messageFontSize": 22, "actorFontSize": 22, "noteFontSize": 20, "boxMargin": 6, "messageMargin": 28}}}%%
+sequenceDiagram
+    autonumber
+    actor C as App Web
+    participant B as bff-web
+    participant K as Kafka
+    participant P as ms-pagos
+    participant MC as ms-cuentas
+    participant V as ms-validaciones
+    participant N as ms-notificaciones
+    C->>B: POST transferencia (HTTPS + JWT)
+    B->>K: solicitudes.ingresadas
+    B-->>C: 202 PENDIENTE
+    K->>P: solicitud
+    P->>MC: GET cuenta (CB msCuentas)
+    MC-->>P: tipo, estado, saldo
+    P->>K: transacciones.solicitadas
+    K->>V: reglas + antifraude
+    V->>K: transacciones.validadas
+    opt monto inusual o actividad sospechosa
+        V->>K: alertas.seguridad
+    end
+    K->>P: resultado validacion
+    P->>K: cuentas.ajustes
+    K->>MC: cargo y abono (1 transaccion)
+    MC->>K: cuentas.ajustes.resultado
+    K->>P: APLICADA o RECHAZADA
+    P->>K: transacciones.completadas
+    K->>N: aviso al cliente
+    C->>B: GET estado (CB msPagos)
+    B-->>C: APLICADA + saldo final

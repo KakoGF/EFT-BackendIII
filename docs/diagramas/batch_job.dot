@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, ordering=out, fontname="Helvetica", nodesep=0.4, ranksep=0.45, label="Flujo de cada Job de Spring Batch (igual en los 3 Jobs)", labelloc=t, fontsize=15, pad=0.3];
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#F6E0E0", color="#B55A5A"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  runner [label="EjecutorJobConReejecucion\n(lanza el job con el parametro corrida;\nsi termina FAILED lo reejecuta hasta 3 veces)", fillcolor="#FFE9B3", color="#C99A00"];
+  limpieza [label="Step 1: Limpieza (Tasklet)\nvacia las tablas del job"];
+  subgraph cluster_p { label="Step 2: Procesamiento particionado (manager)"; style="rounded,filled"; fillcolor="#FBF1F1"; color="#B55A5A";
+    part [label="ArchivoCsvRangePartitioner\ndivide 1.000 filas en grid-size rangos", fillcolor="#FFFFFF"];
+    p0 [label="Particion 0\nreader -> processor -> writer\nchunk 50", fillcolor="#FFFFFF"]; p1 [label="Particion 1", fillcolor="#FFFFFF"]; p2 [label="Particion 2", fillcolor="#FFFFFF"];
+    pol [label="faultTolerant(): retry (3 intentos, BD caida)\nskip de datos invalidos con su motivo\nlistener de rendimiento [PERF]", shape=note, fillcolor="#FFFFFF", fontsize=10];
+  }
+  cuad [label="Step 3: Cuadratura (Tasklet)\nleidos = validos + anomalias + omitidos"];
+  dec [label="CalidadDatosDecider\n% omitidos vs umbral 30%", shape=diamond, fillcolor="#E4D9F2", color="#7D5BA6"];
+  alerta [label="Step alerta de calidad"];
+  resumen [label="Step 4: Resumen (Tasklet)\nreporte en consola y tabla"];
+  db [label="PostgreSQL bancoxyz_batch\n(datos + BATCH_* del JobRepository)", shape=cylinder, fillcolor="#E4D9F2", color="#7D5BA6"];
+  runner -> limpieza -> part; part -> {p0 p1 p2}; {p0 p1 p2} -> cuad; cuad -> dec; dec -> alerta [label="CALIDAD_CRITICA"]; dec -> resumen [label="CON_ALERTAS /\nSIN_INCIDENCIAS"]; alerta -> resumen;
+  {p0 p1 p2} -> db [style=dashed, color="#7D5BA6"]; pol -> p1 [style=invis];
+}

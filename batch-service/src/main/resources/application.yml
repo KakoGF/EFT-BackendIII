@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: bancoxyz-batch-service
+
+  main:
+    web-application-type: none
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bancoxyz_batch}
+    username: ${DB_USER:bancoxyz}
+    password: ${DB_PASSWORD:bancoxyz}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 3
+      connection-timeout: 5000
+      pool-name: BancoXYZ-Batch-Pool
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+      name: ${JOB_NAME:jobReporteTransaccionesDiarias}
+
+  sql:
+    init:
+      mode: always
+      continue-on-error: false
+
+app:
+  batch:
+    data-dir: ${APP_BATCH_DATA_DIR:../datos-legacy}
+    corrida: ${CORRIDA:}
+    chunk-size: 50
+    skip-limit: 400
+    thread-pool-size: 3
+    thread-queue-capacity: 10
+    grid-size: 3
+    umbral-alerta-calidad: 0.3
+    reintento:
+      max-intentos: 3
+    reejecucion:
+      max-intentos: 3
+      espera-ms: 5000
+    simulacion:
+      falla-transitoria: false
+      falla-critica: false
+
+logging:
+  level:
+    root: INFO
+    cl.duocuc.bancoxyz.batch: INFO
+    org.springframework.batch: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
